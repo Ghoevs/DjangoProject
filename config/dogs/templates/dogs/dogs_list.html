@@ -1,6 +1,7 @@
 {% extends 'dogs/index.html' %}
 {% block content %}
 <h2>Все собаки</h2>
+<a href="{% url 'dogs:dog_create' %}" class="btn btn-success mb-3">Добавить собаку</a>
 <div class="row">
     {% for dog in dogs %}
         <div class="col-md-4 mb-3">
@@ -13,6 +14,8 @@
                     <p class="card-text">Порода: {{ dog.breed.name }}</p>
                     <p class="card-text">Возраст: {{ dog.age }} лет</p>
                     <a href="{% url 'dogs:dog_detail' dog.id %}" class="btn btn-primary">Подробнее</a>
+                    <a href="{% url 'dogs:dog_update' dog.id %}" class="btn btn-warning">Изменить</a>
+                    <a href="{% url 'dogs:dog_delete' dog.id %}" class="btn btn-danger">Удалить</a>
                 </div>
             </div>
         </div>

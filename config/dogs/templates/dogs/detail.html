@@ -1,4 +1,4 @@
-{% extends 'dogs/base.html' %}
+{% extends 'dogs/index.html' %}
 {% block content %}
 <h2>{{ dog.name }}</h2>
 <div class="card">
@@ -9,7 +9,9 @@
         <h5 class="card-title">{{ dog.breed.name }}</h5>
         <p>Возраст: {{ dog.age }} лет</p>
         <p>{{ dog.description }}</p>
-        <a href="{% url 'dogs:dogs_list' %}" class="btn btn-secondary">Назад к списку</a>
+        <a href="{% url 'dogs:dogs_list' %}" class="btn btn-secondary">Назад</a>
+        <a href="{% url 'dogs:dog_update' dog.id %}" class="btn btn-warning">Изменить</a>
+        <a href="{% url 'dogs:dog_delete' dog.id %}" class="btn btn-danger">Удалить</a>
     </div>
 </div>
 {% endblock %}
