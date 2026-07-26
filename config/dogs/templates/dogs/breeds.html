@@ -1,0 +1,18 @@
+{% extends 'dogs/index.html' %}
+{% block content %}
+<h2>Породы собак</h2>
+<div class="row">
+    {% for breed in breeds %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ breed.name }}</h5>
+                    <p class="card-text">{{ breed.description }}</p>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p>Пород пока нет.</p>
+    {% endfor %}
+</div>
+{% endblock %}
