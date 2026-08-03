@@ -1,55 +1,65 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.contrib.auth.views import (
-    PasswordChangeView, PasswordResetView, PasswordResetConfirmView
-)
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.contrib.auth import login
+from django.contrib.auth.views import (
+    LoginView, LogoutView, PasswordChangeView,
+    PasswordResetView, PasswordResetConfirmView
+)
+from django.contrib import messages
+from django.views.generic import CreateView, TemplateView
 from .forms import (
     CustomUserCreationForm, CustomPasswordChangeForm,
     CustomPasswordResetForm, CustomSetPasswordForm
 )
-from .services import send_welcome_email
+from .models import User
+from .services import send_welcome_email, send_password_change_email
 
 
-def register(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            send_welcome_email(user)  # отправка письма
-            messages.success(request, 'Регистрация прошла успешно! Проверьте почту.')
-            return redirect('users:profile')
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'users/register.html', {'form': form})
+class RegisterView(CreateView):
+    model = User
+    form_class = CustomUserCreationForm
+    template_name = 'users/register.html'
+    success_url = reverse_lazy('users:profile')
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        send_welcome_email(user)
+        messages.success(self.request, 'Регистрация прошла успешно! Проверьте почту.')
+        return redirect(self.success_url)
 
 
-def user_login(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        user = authenticate(request, email=email, password=password)
-        if user is not None:
-            login(request, user)
-            messages.success(request, f'Добро пожаловать, {user.username}!')
-            return redirect('users:profile')
-        else:
-            messages.error(request, 'Неверный email или пароль')
-    return render(request, 'users/login.html')
+class CustomLoginView(LoginView):
+    template_name = 'users/login.html'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return reverse_lazy('users:profile')
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Добро пожаловать, {form.get_user().username}!')
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Неверный email или пароль')
+        return super().form_invalid(form)
 
 
-@login_required
-def profile(request):
-    return render(request, 'users/profile.html', {'user': request.user})
+class ProfileView(TemplateView):
+    template_name = 'users/profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user'] = self.request.user
+        return context
 
 
-def user_logout(request):
-    logout(request)
-    messages.info(request, 'Вы вышли из аккаунта')
-    return redirect('dogs:index')
+class CustomLogoutView(LogoutView):
+    next_page = 'dogs:index'
+
+    def dispatch(self, request, *args, **kwargs):
+        messages.info(request, 'Вы вышли из аккаунта')
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CustomPasswordChangeView(PasswordChangeView):
@@ -58,8 +68,6 @@ class CustomPasswordChangeView(PasswordChangeView):
     success_url = reverse_lazy('users:profile')
 
     def form_valid(self, form):
-        from .services import send_password_change_email
-        update_session_auth_hash(self.request, form.user)
         send_password_change_email(self.request.user)
         messages.success(self.request, 'Пароль успешно изменен!')
         return super().form_valid(form)

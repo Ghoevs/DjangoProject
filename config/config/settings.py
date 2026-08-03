@@ -77,10 +77,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'ru-ru'
+LANGUAGE_CODE = 'ru'
+LANGUAGES = [
+    ('ru', 'Русский'),
+    ('en', 'English'),
+]
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
+USE_L10N = True
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
