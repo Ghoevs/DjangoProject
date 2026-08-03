@@ -35,7 +35,12 @@
                         <li class="mt-2"></li>
                         {% if user.is_authenticated %}
                             <li><a href="{% url 'users:profile' %}" class="text-white">Профиль ({{ user.username }})</a></li>
-                            <li><a href="{% url 'users:logout' %}" class="text-white">Выйти</a></li>
+                            <li>
+    <form method="post" action="{% url 'users:logout' %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-link text-white p-0" style="text-decoration: none;">Выйти</button>
+    </form>
+</li>
                         {% else %}
                             <li><a href="{% url 'users:login' %}" class="text-white">Войти</a></li>
                             <li><a href="{% url 'users:register' %}" class="text-white">Регистрация</a></li>

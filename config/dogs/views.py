@@ -1,65 +1,126 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from .models import Dog, Breed
-from .forms import DogForm
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from .models import Dog, Breed, Pedigree
+from .forms import DogForm, PedigreeForm
+from users.services import send_dog_created_email
 
 
-def index(request):
-    return render(request, 'dogs/index.html')
+class IndexView(TemplateView):
+    template_name = 'dogs/index.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Питомник собак'
+        return context
 
 
-def dogs_list(request):
-    dogs = Dog.objects.all().order_by('-created_at')
-    return render(request, 'dogs/dogs_list.html', {'dogs': dogs})
+class DogListView(ListView):
+    model = Dog
+    template_name = 'dogs/dogs_list.html'
+    context_object_name = 'dogs'
+    ordering = ['-created_at']
 
 
-def dog_detail(request, dog_id):
-    dog = get_object_or_404(Dog, id=dog_id)
-    return render(request, 'dogs/detail.html', {'dog': dog})
+class DogDetailView(DetailView):
+    model = Dog
+    template_name = 'dogs/detail.html'
+    context_object_name = 'dog'
+    pk_url_kwarg = 'dog_id'
 
 
-@login_required
-def dog_create(request):
-    if request.method == 'POST':
-        form = DogForm(request.POST, request.FILES)
-        if form.is_valid():
-            dog = form.save(commit=False)
-            dog.owner = request.user  # привязка к пользователю
-            dog.save()
-            from users.services import send_dog_created_email
-            send_dog_created_email(request.user, dog)  # уведомление
-            messages.success(request, 'Собака добавлена!')
-            return redirect('dogs:dogs_list')
-    else:
-        form = DogForm()
-    return render(request, 'dogs/dog_form.html', {'form': form, 'action': 'Добавить'})
+class DogCreateView(LoginRequiredMixin, CreateView):
+    model = Dog
+    form_class = DogForm
+    template_name = 'dogs/dog_form.html'
+    success_url = reverse_lazy('dogs:dogs_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['action'] = 'Добавить'
+        return context
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        response = super().form_valid(form)
+        send_dog_created_email(self.request.user, self.object)
+        messages.success(self.request, 'Собака добавлена!')
+        return response
 
 
-@login_required
-def dog_update(request, dog_id):
-    dog = get_object_or_404(Dog, id=dog_id)
-    if request.method == 'POST':
-        form = DogForm(request.POST, request.FILES, instance=dog)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Данные обновлены!')
-            return redirect('dogs:dog_detail', dog_id=dog.id)
-    else:
-        form = DogForm(instance=dog)
-    return render(request, 'dogs/dog_form.html', {'form': form, 'action': 'Изменить'})
+class DogUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Dog
+    form_class = DogForm
+    template_name = 'dogs/dog_form.html'
+    pk_url_kwarg = 'dog_id'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['action'] = 'Изменить'
+        return context
 
-@login_required
-def dog_delete(request, dog_id):
-    dog = get_object_or_404(Dog, id=dog_id)
-    if request.method == 'POST':
-        dog.delete()
-        messages.success(request, 'Собака удалена!')
+    def test_func(self):
+        dog = self.get_object()
+        return self.request.user == dog.owner or self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'У вас нет прав на редактирование этой собаки')
         return redirect('dogs:dogs_list')
-    return render(request, 'dogs/dog_confirm_delete.html', {'dog': dog})
+
+    def get_success_url(self):
+        return reverse_lazy('dogs:dog_detail', kwargs={'dog_id': self.object.id})
 
 
-def breeds_list(request):
-    breeds = Breed.objects.all()
-    return render(request, 'dogs/breeds.html', {'breeds': breeds})
+class DogDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Dog
+    template_name = 'dogs/dog_confirm_delete.html'
+    pk_url_kwarg = 'dog_id'
+    success_url = reverse_lazy('dogs:dogs_list')
+
+    def test_func(self):
+        dog = self.get_object()
+        return self.request.user == dog.owner or self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'У вас нет прав на удаление этой собаки')
+        return redirect('dogs:dogs_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Собака удалена!')
+        return super().delete(request, *args, **kwargs)
+
+
+class BreedListView(ListView):
+    model = Breed
+    template_name = 'dogs/breeds.html'
+    context_object_name = 'breeds'
+
+
+class PedigreeCreateView(LoginRequiredMixin, CreateView):
+    model = Pedigree
+    form_class = PedigreeForm
+    template_name = 'dogs/pedigree_form.html'
+    success_url = reverse_lazy('dogs:dogs_list')
+
+    def form_valid(self, form):
+        dog = get_object_or_404(Dog, id=self.kwargs['dog_id'])
+        form.instance.dog = dog
+        messages.success(self.request, f'Родословная для {dog.name} добавлена!')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dog'] = get_object_or_404(Dog, id=self.kwargs['dog_id'])
+        return context
+
+
+class PedigreeDetailView(DetailView):
+    model = Pedigree
+    template_name = 'dogs/pedigree_detail.html'
+    context_object_name = 'pedigree'
+
+    def get_object(self):
+        dog = get_object_or_404(Dog, id=self.kwargs['dog_id'])
+        return get_object_or_404(Pedigree, dog=dog)

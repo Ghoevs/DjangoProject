@@ -8,10 +8,17 @@
     <div class="card-body">
         <h5 class="card-title">{{ dog.breed.name }}</h5>
         <p>Возраст: {{ dog.age }} лет</p>
+        <p>Владелец: {{ dog.owner.username|default:"Нет" }}</p>
         <p>{{ dog.description }}</p>
         <a href="{% url 'dogs:dogs_list' %}" class="btn btn-secondary">Назад</a>
-        <a href="{% url 'dogs:dog_update' dog.id %}" class="btn btn-warning">Изменить</a>
-        <a href="{% url 'dogs:dog_delete' dog.id %}" class="btn btn-danger">Удалить</a>
+        {% if user == dog.owner or user.is_staff %}
+            <a href="{% url 'dogs:dog_update' dog.id %}" class="btn btn-warning">Изменить</a>
+            <a href="{% url 'dogs:dog_delete' dog.id %}" class="btn btn-danger">Удалить</a>
+        {% endif %}
+        <a href="{% url 'dogs:pedigree_create' dog.id %}" class="btn btn-info">Добавить родословную</a>
+        {% if dog.pedigree %}
+            <a href="{% url 'dogs:pedigree_detail' dog.id %}" class="btn btn-success">Родословная</a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

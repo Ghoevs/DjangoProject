@@ -29,3 +29,22 @@ class Dog(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.breed.name})'
+
+
+class Pedigree(models.Model):
+    dog = models.OneToOneField(Dog, on_delete=models.CASCADE, related_name='pedigree', verbose_name='Собака')
+    father = models.CharField(max_length=100, blank=True, verbose_name='Отец')
+    mother = models.CharField(max_length=100, blank=True, verbose_name='Мать')
+    grandfather_father = models.CharField(max_length=100, blank=True, verbose_name='Дед по отцу')
+    grandmother_father = models.CharField(max_length=100, blank=True, verbose_name='Бабка по отцу')
+    grandfather_mother = models.CharField(max_length=100, blank=True, verbose_name='Дед по матери')
+    grandmother_mother = models.CharField(max_length=100, blank=True, verbose_name='Бабка по матери')
+    awards = models.TextField(blank=True, verbose_name='Награды')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
+
+    class Meta:
+        verbose_name = 'Родословная'
+        verbose_name_plural = 'Родословные'
+
+    def __str__(self):
+        return f'Родословная {self.dog.name}'

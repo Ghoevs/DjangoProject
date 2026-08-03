@@ -3,6 +3,12 @@ from django.db import models
 
 
 class User(AbstractUser):
+    ROLE_CHOICES = [
+        ('user', 'Пользователь'),
+        ('breeder', 'Заводчик'),
+        ('moderator', 'Модератор'),
+    ]
+
     email = models.EmailField(
         unique=True,
         verbose_name='Email'
@@ -28,6 +34,12 @@ class User(AbstractUser):
         blank=True,
         null=True,
         verbose_name='Дата рождения'
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='user',
+        verbose_name='Роль'
     )
     created_at = models.DateTimeField(
         auto_now_add=True,

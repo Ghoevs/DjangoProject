@@ -11,7 +11,10 @@
             <p><strong>Дата рождения:</strong> {{ user.birth_date|default:"Не указана" }}</p>
             <p><strong>О себе:</strong> {{ user.bio|default:"Не указано" }}</p>
             <p><strong>Дата регистрации:</strong> {{ user.created_at|date:"d.m.Y" }}</p>
-            <a href="{% url 'users:logout' %}" class="btn btn-danger">Выйти</a>
+            <form method="post" action="{% url 'users:logout' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Выйти</button>
+</form>
             <a href="{% url 'users:password_change' %}" class="btn btn-warning">Сменить пароль</a>
             <a href="{% url 'users:password_reset' %}" class="btn btn-secondary">Сбросить пароль</a>
         </div>

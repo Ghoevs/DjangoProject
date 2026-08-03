@@ -1,7 +1,6 @@
 from django import forms
-from .models import Dog
+from .models import Dog, Pedigree
 from .mixins import StyleFormMixin
-from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class DogForm(StyleFormMixin, forms.ModelForm):
@@ -22,3 +21,10 @@ class DogForm(StyleFormMixin, forms.ModelForm):
         if len(name) < 2:
             raise forms.ValidationError('Кличка должна быть не менее 2 символов')
         return name
+
+
+class PedigreeForm(StyleFormMixin, forms.ModelForm):
+    class Meta:
+        model = Pedigree
+        fields = ['father', 'mother', 'grandfather_father', 'grandmother_father',
+                  'grandfather_mother', 'grandmother_mother', 'awards']
