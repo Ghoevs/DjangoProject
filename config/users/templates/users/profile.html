@@ -2,11 +2,6 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Профиль</h2>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">{{ user.username }}</h5>
@@ -17,6 +12,8 @@
             <p><strong>О себе:</strong> {{ user.bio|default:"Не указано" }}</p>
             <p><strong>Дата регистрации:</strong> {{ user.created_at|date:"d.m.Y" }}</p>
             <a href="{% url 'users:logout' %}" class="btn btn-danger">Выйти</a>
+            <a href="{% url 'users:password_change' %}" class="btn btn-warning">Сменить пароль</a>
+            <a href="{% url 'users:password_reset' %}" class="btn btn-secondary">Сбросить пароль</a>
         </div>
     </div>
 </div>

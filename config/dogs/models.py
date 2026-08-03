@@ -1,4 +1,5 @@
 from django.db import models
+from users.models import User
 
 
 class Breed(models.Model):
@@ -19,6 +20,7 @@ class Dog(models.Model):
     age = models.PositiveSmallIntegerField(verbose_name='Возраст (лет)')
     photo = models.ImageField(upload_to='dogs/', blank=True, null=True, verbose_name='Фото')
     description = models.TextField(blank=True, verbose_name='Описание')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dogs', verbose_name='Владелец', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
 
     class Meta:

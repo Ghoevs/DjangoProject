@@ -1,4 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import Dog, Breed
 from .forms import DogForm
 
@@ -17,33 +19,43 @@ def dog_detail(request, dog_id):
     return render(request, 'dogs/detail.html', {'dog': dog})
 
 
+@login_required
 def dog_create(request):
     if request.method == 'POST':
         form = DogForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            dog = form.save(commit=False)
+            dog.owner = request.user  # привязка к пользователю
+            dog.save()
+            from users.services import send_dog_created_email
+            send_dog_created_email(request.user, dog)  # уведомление
+            messages.success(request, 'Собака добавлена!')
             return redirect('dogs:dogs_list')
     else:
         form = DogForm()
     return render(request, 'dogs/dog_form.html', {'form': form, 'action': 'Добавить'})
 
 
+@login_required
 def dog_update(request, dog_id):
     dog = get_object_or_404(Dog, id=dog_id)
     if request.method == 'POST':
         form = DogForm(request.POST, request.FILES, instance=dog)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Данные обновлены!')
             return redirect('dogs:dog_detail', dog_id=dog.id)
     else:
         form = DogForm(instance=dog)
     return render(request, 'dogs/dog_form.html', {'form': form, 'action': 'Изменить'})
 
 
+@login_required
 def dog_delete(request, dog_id):
     dog = get_object_or_404(Dog, id=dog_id)
     if request.method == 'POST':
         dog.delete()
+        messages.success(request, 'Собака удалена!')
         return redirect('dogs:dogs_list')
     return render(request, 'dogs/dog_confirm_delete.html', {'dog': dog})
 
