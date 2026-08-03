@@ -10,10 +10,11 @@ class BreedAdmin(admin.ModelAdmin):
 
 @admin.register(Dog)
 class DogAdmin(admin.ModelAdmin):
-    list_display = ('name', 'breed', 'age', 'owner', 'created_at')
-    list_filter = ('breed', 'age')
+    list_display = ('name', 'breed', 'age', 'owner', 'is_active', 'views', 'created_at')
+    list_filter = ('breed', 'is_active', 'age')
     search_fields = ('name', 'description')
-    readonly_fields = ('created_at',)
+    readonly_fields = ('views', 'created_at')
+    list_editable = ('is_active',)
 
 
 @admin.register(Pedigree)

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Dog, Pedigree
+from .models import Dog, Pedigree, Review
 from .mixins import StyleFormMixin
 
 
@@ -23,8 +23,24 @@ class DogForm(StyleFormMixin, forms.ModelForm):
         return name
 
 
+class DogFullForm(StyleFormMixin, forms.ModelForm):
+    class Meta:
+        model = Dog
+        fields = ['name', 'breed', 'age', 'photo', 'description', 'is_active', 'owner']
+
+
 class PedigreeForm(StyleFormMixin, forms.ModelForm):
     class Meta:
         model = Pedigree
         fields = ['father', 'mother', 'grandfather_father', 'grandmother_father',
                   'grandfather_mother', 'grandmother_mother', 'awards']
+
+
+class ReviewForm(StyleFormMixin, forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['text', 'rating']
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Ваш отзыв...'}),
+            'rating': forms.RadioSelect(choices=[(i, i) for i in range(1, 6)]),
+        }

@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from .models import Dog, Breed, Pedigree
-from .forms import DogForm, PedigreeForm
+from .forms import DogForm, DogFullForm, PedigreeForm
+from .services import send_views_notification
 from users.services import send_dog_created_email
 
 
@@ -23,12 +24,26 @@ class DogListView(ListView):
     context_object_name = 'dogs'
     ordering = ['-created_at']
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
 
 class DogDetailView(DetailView):
     model = Dog
     template_name = 'dogs/detail.html'
     context_object_name = 'dog'
     pk_url_kwarg = 'dog_id'
+
+    def get_object(self, queryset=None):
+        dog = super().get_object(queryset)
+        if self.request.user != dog.owner:
+            dog.views += 1
+            dog.save()
+            send_views_notification(dog)
+        return dog
 
 
 class DogCreateView(LoginRequiredMixin, CreateView):
@@ -52,14 +67,8 @@ class DogCreateView(LoginRequiredMixin, CreateView):
 
 class DogUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Dog
-    form_class = DogForm
     template_name = 'dogs/dog_form.html'
     pk_url_kwarg = 'dog_id'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['action'] = 'Изменить'
-        return context
 
     def test_func(self):
         dog = self.get_object()
@@ -68,6 +77,17 @@ class DogUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def handle_no_permission(self):
         messages.error(self.request, 'У вас нет прав на редактирование этой собаки')
         return redirect('dogs:dogs_list')
+
+    def get_form_class(self):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return DogFullForm
+        return DogForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['action'] = 'Изменить'
+        return context
 
     def get_success_url(self):
         return reverse_lazy('dogs:dog_detail', kwargs={'dog_id': self.object.id})
