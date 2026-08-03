@@ -6,7 +6,7 @@ from django.contrib.auth.views import (
     PasswordResetView, PasswordResetConfirmView
 )
 from django.contrib import messages
-from django.views.generic import CreateView, TemplateView
+from django.views.generic import CreateView, TemplateView, ListView, DetailView
 from .forms import (
     CustomUserCreationForm, CustomPasswordChangeForm,
     CustomPasswordResetForm, CustomSetPasswordForm
@@ -84,3 +84,17 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     form_class = CustomSetPasswordForm
     template_name = 'users/password_reset_confirm.html'
     success_url = reverse_lazy('users:login')
+
+
+class UserListView(ListView):
+    model = User
+    template_name = 'users/user_list.html'
+    context_object_name = 'users'
+    ordering = ['-date_joined']
+
+
+class UserDetailView(DetailView):
+    model = User
+    template_name = 'users/user_detail.html'
+    context_object_name = 'profile_user'
+    pk_url_kwarg = 'user_id'

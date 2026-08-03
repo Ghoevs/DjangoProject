@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Breed, Dog, Pedigree
+from .models import Breed, Dog, Pedigree, Review
 
 
 @admin.register(Breed)
@@ -21,3 +21,10 @@ class DogAdmin(admin.ModelAdmin):
 class PedigreeAdmin(admin.ModelAdmin):
     list_display = ('dog', 'father', 'mother', 'created_at')
     search_fields = ('dog__name', 'father', 'mother')
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('dog', 'user', 'rating', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('dog__name', 'user__username', 'text')
