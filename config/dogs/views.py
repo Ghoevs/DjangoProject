@@ -3,6 +3,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.db.models import Q
 from .models import Dog, Breed, Pedigree, Review
 from .forms import DogForm, DogFullForm, PedigreeForm, ReviewForm
 from .services import send_views_notification
@@ -23,13 +24,34 @@ class DogListView(ListView):
     model = Dog
     template_name = 'dogs/dogs_list.html'
     context_object_name = 'dogs'
-    ordering = ['-created_at']
+    paginate_by = 6
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        query = self.request.GET.get('q')
+        breed_id = self.request.GET.get('breed')
+
+        if query:
+            queryset = queryset.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query) |
+                Q(breed__name__icontains=query)
+            )
+
+        if breed_id:
+            queryset = queryset.filter(breed_id=breed_id)
+
         if not self.request.user.is_staff:
             queryset = queryset.filter(is_active=True)
+
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breeds'] = Breed.objects.all()
+        context['search_query'] = self.request.GET.get('q', '')
+        context['selected_breed'] = self.request.GET.get('breed', '')
+        return context
 
 
 class DogDetailView(DetailView):
@@ -123,6 +145,19 @@ class BreedListView(ListView):
     model = Breed
     template_name = 'dogs/breeds.html'
     context_object_name = 'breeds'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.GET.get('q')
+        if query:
+            queryset = queryset.filter(name__icontains=query)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        return context
 
 
 class PedigreeCreateView(LoginRequiredMixin, CreateView):
@@ -153,6 +188,8 @@ class PedigreeDetailView(DetailView):
         return get_object_or_404(Pedigree, dog=dog)
 
 
+#---Отзывы CRUD---
+
 class ReviewCreateView(LoginRequiredMixin, CreateView):
     model = Review
     form_class = ReviewForm
@@ -174,15 +211,45 @@ class ReviewCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class UserListView(ListView):
-    model = User
-    template_name = 'users/user_list.html'
-    context_object_name = 'users'
-    ordering = ['-date_joined']
+class ReviewUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Review
+    form_class = ReviewForm
+    template_name = 'dogs/review_form.html'
+    pk_url_kwarg = 'review_id'
+
+    def test_func(self):
+        review = self.get_object()
+        return self.request.user == review.user
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Вы не можете редактировать чужой отзыв')
+        return redirect('dogs:dogs_list')
+
+    def get_success_url(self):
+        return reverse_lazy('dogs:dog_detail', kwargs={'dog_id': self.object.dog.id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dog'] = self.object.dog
+        return context
 
 
-class UserDetailView(DetailView):
-    model = User
-    template_name = 'users/user_detail.html'
-    context_object_name = 'profile_user'
-    pk_url_kwarg = 'user_id'
+class ReviewDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Review
+    template_name = 'dogs/review_confirm_delete.html'
+    pk_url_kwarg = 'review_id'
+
+    def test_func(self):
+        review = self.get_object()
+        return self.request.user == review.user or self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Вы не можете удалить чужой отзыв')
+        return redirect('dogs:dogs_list')
+
+    def get_success_url(self):
+        return reverse_lazy('dogs:dog_detail', kwargs={'dog_id': self.object.dog.id})
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Отзыв удалён!')
+        return super().delete(request, *args, **kwargs)
