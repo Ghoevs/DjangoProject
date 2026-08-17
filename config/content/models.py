@@ -35,3 +35,21 @@ class Content(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Question(models.Model):
+    text = models.TextField(verbose_name='Вопрос')
+    content = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='questions', verbose_name='Контент', null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='questions', verbose_name='Пользователь')
+    answer = models.TextField(blank=True, null=True, verbose_name='Ответ')
+    is_answered = models.BooleanField(default=False, verbose_name='Отвечен')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+
+    class Meta:
+        verbose_name = 'Вопрос'
+        verbose_name_plural = 'Вопросы'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.text[:50]
