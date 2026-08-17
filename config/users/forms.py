@@ -15,8 +15,13 @@ class CustomUserCreationForm(StyleFormMixin, UserCreationForm):
         self.fields['password1'].help_text = 'Минимум 8 символов, заглавная и строчная буква, цифра'
 
 
+class ProfileUpdateForm(StyleFormMixin, forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'phone', 'avatar', 'bio', 'birth_date']
+
+
 class CustomAuthenticationForm(StyleFormMixin, AuthenticationForm):
-    """Форма входа с email вместо username"""
     username = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
 
 

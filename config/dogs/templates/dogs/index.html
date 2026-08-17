@@ -1,5 +1,6 @@
 {% load static %}
 {% load dogs_tags %}
+{% load cache %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,16 +33,16 @@
                         <li><a href="{% url 'dogs:index' %}" class="text-white">Главная</a></li>
                         <li><a href="{% url 'dogs:breeds' %}" class="text-white">Породы</a></li>
                         <li><a href="{% url 'dogs:dogs_list' %}" class="text-white">Собаки</a></li>
+                        <li><a href="{% url 'users:user_list' %}" class="text-white">Пользователи</a></li>
                         <li class="mt-2"></li>
                         {% if user.is_authenticated %}
                             <li><a href="{% url 'users:profile' %}" class="text-white">Профиль ({{ user.username }})</a></li>
-                        <li>
-                            <form method="post" action="{% url 'users:logout' %}" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-link text-white p-0" style="text-decoration: none;">Выйти</button>
-                            </form>
-                        </li>
-                        <li><a href="{% url 'users:user_list' %}" class="text-white">Пользователи</a></li>
+                            <li>
+                                <form method="post" action="{% url 'users:logout' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link text-white p-0" style="text-decoration: none;">Выйти</button>
+                                </form>
+                            </li>
                         {% else %}
                             <li><a href="{% url 'users:login' %}" class="text-white">Войти</a></li>
                             <li><a href="{% url 'users:register' %}" class="text-white">Регистрация</a></li>
@@ -53,7 +54,7 @@
     </div>
     <div class="navbar navbar-dark bg-dark box-shadow">
         <div class="container d-flex justify-content-between">
-            <a href="#" class="navbar-brand d-flex align-items-center">
+            <a href="{% url 'dogs:index' %}" class="navbar-brand d-flex align-items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>

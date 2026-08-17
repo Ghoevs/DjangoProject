@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.db.models import Q
+from django.core.cache import cache
 from .models import Dog, Breed, Pedigree, Review
 from .forms import DogForm, DogFullForm, PedigreeForm, ReviewForm
 from .services import send_views_notification
@@ -187,8 +188,6 @@ class PedigreeDetailView(DetailView):
         dog = get_object_or_404(Dog, id=self.kwargs['dog_id'])
         return get_object_or_404(Pedigree, dog=dog)
 
-
-#---Отзывы CRUD---
 
 class ReviewCreateView(LoginRequiredMixin, CreateView):
     model = Review

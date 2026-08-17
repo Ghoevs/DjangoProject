@@ -6,10 +6,12 @@ from django.contrib.auth.views import (
     PasswordResetView, PasswordResetConfirmView
 )
 from django.contrib import messages
-from django.views.generic import CreateView, TemplateView, ListView, DetailView
+from django.views.generic import CreateView, TemplateView, ListView, DetailView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .forms import (
     CustomUserCreationForm, CustomPasswordChangeForm,
-    CustomPasswordResetForm, CustomSetPasswordForm
+    CustomPasswordResetForm, CustomSetPasswordForm,
+    ProfileUpdateForm
 )
 from .models import User
 from .services import send_welcome_email, send_password_change_email
@@ -54,6 +56,20 @@ class ProfileView(TemplateView):
         return context
 
 
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = ProfileUpdateForm
+    template_name = 'users/profile_update.html'
+    success_url = reverse_lazy('users:profile')
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Профиль обновлен!')
+        return super().form_valid(form)
+
+
 class CustomLogoutView(LogoutView):
     next_page = 'dogs:index'
 
@@ -91,6 +107,7 @@ class UserListView(ListView):
     template_name = 'users/user_list.html'
     context_object_name = 'users'
     ordering = ['-date_joined']
+    paginate_by = 10
 
 
 class UserDetailView(DetailView):
