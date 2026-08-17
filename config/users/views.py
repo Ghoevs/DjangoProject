@@ -26,8 +26,8 @@ class RegisterView(CreateView):
     def form_valid(self, form):
         user = form.save()
         login(self.request, user)
-        send_welcome_email(user)
-        messages.success(self.request, 'Регистрация прошла успешно! Проверьте почту.')
+        # send_welcome_email(user)  # временно отключено
+        messages.success(self.request, 'Регистрация прошла успешно!')
         return redirect(self.success_url)
 
 
