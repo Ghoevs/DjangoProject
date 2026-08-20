@@ -4,7 +4,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.db.models import Q
-from django.core.cache import cache
 from .models import Dog, Breed, Pedigree, Review
 from .forms import DogForm, DogFullForm, PedigreeForm, ReviewForm
 from .services import send_views_notification
@@ -102,16 +101,13 @@ class DogUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         dog = self.get_object()
-        return self.request.user == dog.owner or self.request.user.is_staff
+        return self.request.user == dog.owner
 
     def handle_no_permission(self):
-        messages.error(self.request, 'У вас нет прав на редактирование этой собаки')
+        messages.error(self.request, 'Вы можете редактировать только своих собак')
         return redirect('dogs:dogs_list')
 
     def get_form_class(self):
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return DogFullForm
         return DogForm
 
     def get_context_data(self, **kwargs):
@@ -131,10 +127,10 @@ class DogDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         dog = self.get_object()
-        return self.request.user == dog.owner or self.request.user.is_staff
+        return self.request.user == dog.owner
 
     def handle_no_permission(self):
-        messages.error(self.request, 'У вас нет прав на удаление этой собаки')
+        messages.error(self.request, 'Вы можете удалять только своих собак')
         return redirect('dogs:dogs_list')
 
     def delete(self, request, *args, **kwargs):
@@ -161,11 +157,19 @@ class BreedListView(ListView):
         return context
 
 
-class PedigreeCreateView(LoginRequiredMixin, CreateView):
+class PedigreeCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Pedigree
     form_class = PedigreeForm
     template_name = 'dogs/pedigree_form.html'
     success_url = reverse_lazy('dogs:dogs_list')
+
+    def test_func(self):
+        dog = get_object_or_404(Dog, id=self.kwargs['dog_id'])
+        return self.request.user == dog.owner
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Вы можете добавлять родословную только своим собакам')
+        return redirect('dogs:dogs_list')
 
     def form_valid(self, form):
         dog = get_object_or_404(Dog, id=self.kwargs['dog_id'])
@@ -221,7 +225,7 @@ class ReviewUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user == review.user
 
     def handle_no_permission(self):
-        messages.error(self.request, 'Вы не можете редактировать чужой отзыв')
+        messages.error(self.request, 'Вы можете редактировать только свои отзывы')
         return redirect('dogs:dogs_list')
 
     def get_success_url(self):
@@ -240,10 +244,10 @@ class ReviewDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         review = self.get_object()
-        return self.request.user == review.user or self.request.user.is_staff
+        return self.request.user == review.user
 
     def handle_no_permission(self):
-        messages.error(self.request, 'Вы не можете удалить чужой отзыв')
+        messages.error(self.request, 'Вы можете удалять только свои отзывы')
         return redirect('dogs:dogs_list')
 
     def get_success_url(self):

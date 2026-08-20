@@ -33,9 +33,10 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ dog.name }}</h5>
                     <p class="card-text">Порода: {{ dog.breed.name }}</p>
+                    <p class="card-text">Владелец: {{ dog.owner.username|default:"Нет" }}</p>
                     <p class="card-text">Просмотры: {{ dog.views }}</p>
                     <a href="{% url 'dogs:dog_detail' dog.id %}" class="btn btn-primary">Подробнее</a>
-                    {% if user == dog.owner or user.is_staff %}
+                    {% if user == dog.owner %}
                         <a href="{% url 'dogs:dog_update' dog.id %}" class="btn btn-warning">Изменить</a>
                         <a href="{% url 'dogs:dog_delete' dog.id %}" class="btn btn-danger">Удалить</a>
                     {% endif %}
@@ -47,7 +48,6 @@
     {% endfor %}
 </div>
 
-<!-- Пагинация -->
 {% if is_paginated %}
 <nav>
     <ul class="pagination">

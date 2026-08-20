@@ -19,11 +19,9 @@
         <p>Статус: {% if dog.is_active %}Активна{% else %}Неактивна{% endif %}</p>
         <p>{{ dog.description }}</p>
         <a href="{% url 'dogs:dogs_list' %}" class="btn btn-secondary">Назад</a>
-        {% if user == dog.owner or user.is_staff %}
+        {% if user == dog.owner %}
             <a href="{% url 'dogs:dog_update' dog.id %}" class="btn btn-warning">Изменить</a>
             <a href="{% url 'dogs:dog_delete' dog.id %}" class="btn btn-danger">Удалить</a>
-        {% endif %}
-        {% if user.is_authenticated %}
             <a href="{% url 'dogs:pedigree_create' dog.id %}" class="btn btn-info">Добавить родословную</a>
         {% endif %}
         {% if dog.pedigree %}
@@ -48,7 +46,7 @@
                         <strong>{{ review.user.username }}</strong> — Оценка: {{ review.rating }}/5
                         <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
                     </div>
-                    {% if user == review.user or user.is_staff %}
+                    {% if user == review.user %}
                         <div>
                             <a href="{% url 'dogs:review_update' review.id %}" class="btn btn-sm btn-warning">Изменить</a>
                             <a href="{% url 'dogs:review_delete' review.id %}" class="btn btn-sm btn-danger">Удалить</a>
